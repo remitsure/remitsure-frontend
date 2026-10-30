@@ -10,3 +10,7 @@ next-env.d.ts
 .vercel
 .DS_Store
 *.log
+
+# Editors
+.vscode/
+.idea/
