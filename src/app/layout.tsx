@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { WalletProvider } from "@/components/WalletProvider";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "RemitSure | Send money home for a purpose",
@@ -11,11 +15,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen font-sans antialiased">
+    <html lang="en" className={inter.variable}>
+      <body className="flex min-h-screen flex-col overflow-x-hidden font-sans antialiased">
         <WalletProvider>
           <Header />
-          <main className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">{children}</main>
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-8 sm:px-6">{children}</main>
+          <Footer />
         </WalletProvider>
       </body>
     </html>

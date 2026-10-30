@@ -14,8 +14,8 @@ export function Header() {
   const { address, connecting, error, connect, disconnect } = useWallet();
 
   return (
-    <header className="border-b border-line bg-card">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-line bg-card/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.svg" alt="" width={32} height={32} className="h-8 w-8" />
@@ -26,7 +26,7 @@ export function Header() {
             <Link
               key={href}
               href={href}
-              className="hidden text-sm text-muted hover:text-ink sm:block"
+              className="hidden text-sm font-medium text-muted transition hover:text-ink sm:block"
             >
               {label}
             </Link>
