@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CategoryTag, StatusBadge, VerifiedBadge } from "@/components/Badges";
 import { Notice } from "@/components/Notice";
+import { TxError } from "@/components/TxError";
 import { useWallet } from "@/components/WalletProvider";
 import { api, NotFoundError, type RemittanceDetail } from "@/lib/api";
 import { config, explorerAccount, explorerTx } from "@/lib/config";
@@ -24,6 +25,7 @@ export default function Receipt() {
   const { address, connect } = useWallet();
   const [r, setR] = useState<RemittanceDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<unknown>(null);
   const [busy, setBusy] = useState<Action | null>(null);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -60,14 +62,14 @@ export default function Receipt() {
   async function run(action: Action) {
     if (!address) return connect();
     setBusy(action);
-    setError(null);
+    setTxError(null);
     try {
       const { hash } = await remitsure[action](address, id);
       setLastTx(hash);
       setTimeout(load, 4_000);
       setTimeout(load, 9_000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Transaction failed");
+      setTxError(err);
     } finally {
       setBusy(null);
     }
@@ -173,6 +175,7 @@ export default function Receipt() {
       </div>
 
       {error && <Notice tone="error">{error}</Notice>}
+      {txError !== null && <TxError error={txError} onClear={() => setTxError(null)} />}
       {lastTx && (
         <Notice tone="success">
           Transaction confirmed.{" "}
