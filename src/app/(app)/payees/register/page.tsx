@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Notice } from "@/components/Notice";
+import { TxError } from "@/components/TxError";
 import { useWallet } from "@/components/WalletProvider";
 import type { PayeeCategory } from "@/lib/api";
 import { remitsure } from "@/lib/contract";
@@ -14,7 +15,7 @@ export default function RegisterPayee() {
   const [category, setCategory] = useState<PayeeCategory>("SCHOOL");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +26,7 @@ export default function RegisterPayee() {
       await remitsure.registerPayee(address, name.trim(), category);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err);
     } finally {
       setBusy(false);
     }
@@ -81,7 +82,7 @@ export default function RegisterPayee() {
           </select>
         </label>
 
-        {error && <Notice tone="error">{error}</Notice>}
+        {error !== null && <TxError error={error} onClear={() => setError(null)} />}
 
         <button
           type="submit"
