@@ -4,7 +4,7 @@ import {
   requestAccess,
   signTransaction as freighterSign,
 } from "@stellar/freighter-api";
-import { networkPassphrase } from "./config";
+import { config, networkPassphrase } from "./config";
 
 export class WalletError extends Error {}
 
@@ -32,4 +32,12 @@ export async function signTransaction(xdr: string, address: string): Promise<str
   const res = await freighterSign(xdr, { networkPassphrase, address });
   if (res.error) throw new WalletError(res.error.message ?? "Signing was rejected");
   return res.signedTxXdr;
+}
+
+/** Testnet only: ask friendbot for free test XLM so a new wallet can transact. */
+export async function fundWithFriendbot(address: string): Promise<void> {
+  if (config.network !== "testnet") throw new WalletError("Friendbot only works on testnet");
+  const res = await fetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(address)}`);
+  // 400 means the account already exists, which is fine for our purpose.
+  if (!res.ok && res.status !== 400) throw new WalletError("Friendbot is busy, try again shortly");
 }
