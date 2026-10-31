@@ -27,6 +27,13 @@ const categoryVariant: Record<PayeeCategory, string> = {
 /** Unit enum variants are encoded as a one element vec holding the variant name. */
 const category = (c: PayeeCategory) => xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(categoryVariant[c])]);
 
+/** Thrown when the wallet has never been funded on the current network. */
+export class UnfundedAccountError extends Error {
+  constructor(public address: string) {
+    super("This wallet has no XLM on Stellar testnet yet.");
+  }
+}
+
 export interface TxResult<T = unknown> {
   hash: string;
   value: T;
@@ -36,7 +43,12 @@ export interface TxResult<T = unknown> {
 async function invoke<T>(source: string, method: string, args: xdr.ScVal[]): Promise<TxResult<T>> {
   if (!config.contractId) throw new Error("NEXT_PUBLIC_REMITSURE_CONTRACT_ID is not set");
   const server = new rpc.Server(config.rpcUrl);
-  const account = await server.getAccount(source);
+  const account = await server.getAccount(source).catch((e: unknown) => {
+    if (/not found/i.test(e instanceof Error ? e.message : String(e))) {
+      throw new UnfundedAccountError(source);
+    }
+    throw e;
+  });
   const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
     .addOperation(new Contract(config.contractId).call(method, ...args))
     .setTimeout(60)
