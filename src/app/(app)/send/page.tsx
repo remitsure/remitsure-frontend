@@ -22,7 +22,7 @@ const deadlines = [
 export default function Send() {
   const router = useRouter();
   const { address, connect } = useWallet();
-  const [payees, setPayees] = useState<Payee[]>([]);
+  const [payees, setPayees] = useState<Payee[] | null>(null);
   const [payee, setPayee] = useState("");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
@@ -39,12 +39,13 @@ export default function Send() {
         setPayees(items);
         if (preselected && items.some((p) => p.address === preselected)) setPayee(preselected);
       })
-      .catch(() =>
-        setError("Could not load payees. The API may be waking up, refresh in a minute."),
-      );
+      .catch(() => {
+        setPayees([]);
+        setError("Could not load payees. The API may be waking up, refresh in a minute.");
+      });
   }, []);
 
-  const selected = payees.find((p) => p.address === payee);
+  const selected = payees?.find((p) => p.address === payee);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,9 +91,13 @@ export default function Send() {
             required
           >
             <option value="" disabled>
-              Choose a payee
+              {payees === null
+                ? "Loading payees..."
+                : payees.length === 0
+                  ? "No payees registered yet"
+                  : "Choose a payee"}
             </option>
-            {payees.map((p) => (
+            {payees?.map((p) => (
               <option key={p.address} value={p.address}>
                 {p.name} {p.verified ? "(verified)" : ""}
               </option>
