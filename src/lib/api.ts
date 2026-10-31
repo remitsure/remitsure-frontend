@@ -40,11 +40,29 @@ export interface Stats {
 
 export class NotFoundError extends Error {}
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${config.apiUrl}${path}`, { cache: "no-store" });
-  if (res.status === 404) throw new NotFoundError(path);
-  if (!res.ok) throw new Error(`API ${res.status} on ${path}`);
-  return res.json() as Promise<T>;
+// The hosted API sleeps when idle and answers with network errors or 5xx while it
+// wakes up, so those are retried with backoff. 4xx responses are final.
+const RETRY_DELAYS_MS = [2_000, 4_000, 8_000, 16_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function get<T>(path: string, delays: number[] = RETRY_DELAYS_MS): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    let res: Response | undefined;
+    try {
+      res = await fetch(`${config.apiUrl}${path}`, { cache: "no-store" });
+    } catch (err) {
+      if (attempt >= delays.length) throw err;
+    }
+    if (res) {
+      if (res.status === 404) throw new NotFoundError(path);
+      if (res.ok) return res.json() as Promise<T>;
+      if (res.status < 500 || attempt >= delays.length) {
+        throw new Error(`API ${res.status} on ${path}`);
+      }
+    }
+    await sleep(delays[attempt] ?? 0);
+  }
 }
 
 function qs(params: Record<string, string | undefined>) {
