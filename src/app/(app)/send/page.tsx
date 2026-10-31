@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CategoryTag, VerifiedBadge } from "@/components/Badges";
 import { Notice } from "@/components/Notice";
+import { TxError } from "@/components/TxError";
 import { useWallet } from "@/components/WalletProvider";
 import { api, type Payee } from "@/lib/api";
 import { config } from "@/lib/config";
@@ -28,6 +29,7 @@ export default function Send() {
   const [deadline, setDeadline] = useState(30 * 86_400);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<unknown>(null);
 
   useEffect(() => {
     const preselected = new URLSearchParams(window.location.search).get("payee");
@@ -55,6 +57,7 @@ export default function Send() {
       return setError(err instanceof Error ? err.message : "Invalid amount");
     }
     setBusy(true);
+    setTxError(null);
     try {
       const { value: id } = await remitsure.send(address, {
         payee,
@@ -64,7 +67,7 @@ export default function Send() {
       });
       router.push(`/r/${Number(id)}?new=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setTxError(err);
       setBusy(false);
     }
   }
@@ -155,6 +158,7 @@ export default function Send() {
         </label>
 
         {error && <Notice tone="error">{error}</Notice>}
+        {txError !== null && <TxError error={txError} onClear={() => setTxError(null)} />}
 
         <button
           type="submit"
