@@ -186,8 +186,19 @@ export default function Receipt() {
       )}
       {pending && address === r.sender && !expired && (
         <Notice>
-          Waiting for {payeeName} to claim. If they have not claimed by the deadline, you can take
-          the money back here.
+          You are the sender. Waiting for {payeeName} to claim. If they have not claimed by the
+          deadline, you can take the money back here.
+        </Notice>
+      )}
+      {pending && address === r.payee && (
+        <Notice>
+          You are the payee. Claim to receive the money, or reject it to send it back to the sender.
+        </Notice>
+      )}
+      {pending && address && address !== r.sender && address !== r.payee && (
+        <Notice>
+          Only the wallet of {payeeName} can claim this payment, and only the sender can take it
+          back after the deadline. Your connected wallet is neither.
         </Notice>
       )}
 
