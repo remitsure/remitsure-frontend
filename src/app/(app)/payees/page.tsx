@@ -36,6 +36,13 @@ export default function Payees() {
           <p className="mt-1 text-muted">
             Schools, landlords, hospitals and utilities you can pay.
           </p>
+          <p className="mt-1 text-sm text-muted">
+            Are you a payee? Payments sent to you show up on your{" "}
+            <Link href="/dashboard" className="underline">
+              dashboard
+            </Link>
+            , where you can claim or reject them.
+          </p>
         </div>
         <Link
           href="/payees/register"
