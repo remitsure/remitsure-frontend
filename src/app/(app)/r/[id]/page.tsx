@@ -29,6 +29,7 @@ export default function Receipt() {
   const [busy, setBusy] = useState<Action | null>(null);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   // Ticks with the refresh so the expired check and countdown stay current.
   const [now, setNow] = useState(() => Date.now());
 
@@ -50,14 +51,19 @@ export default function Receipt() {
     [id],
   );
 
+  // CLAIMED/REJECTED/REFUNDED can never change again, so stop polling
+  // (and stop the countdown tick) once a final status is shown.
+  const settled = r !== null && r.status !== "PENDING";
+
   useEffect(() => {
+    if (settled) return;
     load();
     const t = setInterval(() => {
       setNow(Date.now());
       load();
     }, 8_000);
     return () => clearInterval(t);
-  }, [load]);
+  }, [load, settled]);
 
   async function run(action: Action) {
     if (!address) return connect();
@@ -76,9 +82,27 @@ export default function Receipt() {
   }
 
   async function share() {
-    await navigator.clipboard.writeText(window.location.href.split("?")[0]!);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2_000);
+    const url = window.location.href.split("?")[0]!;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ url });
+        return;
+      } catch (err) {
+        // Cancelled share sheets are fine; other failures fall through.
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+    }
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2_000);
+        return;
+      } catch {
+        // Insecure origin or permission denied: show the link instead.
+      }
+    }
+    setShareUrl(url);
   }
 
   if (!r) return <Notice tone={error ? "error" : "info"}>{error ?? "Loading receipt..."}</Notice>;
@@ -226,6 +250,16 @@ export default function Receipt() {
           {copied ? "Link copied" : "Copy receipt link"}
         </button>
       </div>
+
+      {shareUrl && (
+        <input
+          readOnly
+          value={shareUrl}
+          onFocus={(e) => e.target.select()}
+          className="w-full rounded-full border border-line bg-card px-5 py-2 font-mono text-xs"
+          aria-label="Receipt link"
+        />
+      )}
     </div>
   );
 }
